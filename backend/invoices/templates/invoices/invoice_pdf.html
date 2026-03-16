@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 13px;
+      color: #2d2d2d;
+      padding: 52px 58px;
+      background: #fff;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 44px;
+      padding-bottom: 22px;
+      border-bottom: 2px solid #e8e8e8;
+    }
+
+    .sender-name {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: -0.3px;
+    }
+
+    .sender-address {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #777;
+      line-height: 1.65;
+      max-width: 300px;
+    }
+
+    .header-right { text-align: right; }
+
+    .invoice-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .header-logo {
+      margin-top: 10px;
+      max-height: 72px;
+      max-width: 108px;
+      display: block;
+      margin-left: auto;
+    }
+
+    /* ── BILLING SECTION ── */
+    .billing-section {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 38px;
+    }
+
+    .bill-to-label {
+      font-weight: 700;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    .client-name {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 5px;
+      color: #111;
+    }
+
+    .client-detail {
+      font-size: 12px;
+      color: #555;
+      line-height: 1.75;
+    }
+
+    .invoice-meta { text-align: right; }
+
+    .meta-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 28px;
+      margin-bottom: 7px;
+      font-size: 13px;
+    }
+
+    .meta-label {
+      font-weight: 600;
+      color: #555;
+    }
+
+    .meta-value {
+      min-width: 110px;
+      color: #111;
+    }
+
+    /* ── TABLE ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: #f5f5f5;
+      padding: 11px 16px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #666;
+      border: 1px solid #ddd;
+    }
+
+    thead th.col-right {
+      text-align: right;
+      width: 90px;
+    }
+
+    tbody td {
+      padding: 14px 16px;
+      border: 1px solid #ddd;
+      vertical-align: top;
+      line-height: 1.65;
+      color: #333;
+    }
+
+    tbody td.col-right {
+      text-align: right;
+      font-weight: 500;
+      white-space: nowrap;
+      color: #111;
+    }
+
+    /* ── TOTAL ROW ── */
+    tfoot td {
+      border: 1px solid #ddd;
+      padding: 13px 16px;
+      background: #f5f5f5;
+    }
+
+    .total-label {
+      text-align: right;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #111;
+    }
+
+    .total-value {
+      text-align: right;
+      font-size: 17px;
+      font-weight: 700;
+      color: #111;
+      white-space: nowrap;
+      width: 90px;
+    }
+
+    /* ── TERMS ── */
+    .terms {
+      margin-top: 48px;
+      padding-top: 18px;
+      border-top: 1px solid #e8e8e8;
+    }
+
+    .terms-label {
+      font-weight: 700;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #888;
+      margin-bottom: 7px;
+    }
+
+    .terms-text {
+      font-size: 12px;
+      color: #555;
+      line-height: 1.65;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="sender-name">{{ invoice.sender_name }}</div>
+      <div class="sender-address">{{ invoice.sender_address }}</div>
+    </div>
+    <div class="header-right">
+      <div class="invoice-title">Invoice</div>
+      {% if logo_data %}
+        <img class="header-logo" src="{{ logo_data }}" alt="Logo" />
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- BILLING + META -->
+  <div class="billing-section">
+    <div>
+      <div class="bill-to-label">Bill To</div>
+      <div class="client-name">{{ invoice.client_name }}</div>
+      <div class="client-detail">
+        {% if invoice.client_phone %}TELF: {{ invoice.client_phone }}<br>{% endif %}
+        {% if invoice.client_email %}EMAIL: {{ invoice.client_email }}<br>{% endif %}
+        {% if invoice.client_address %}{{ invoice.client_address }}{% endif %}
+      </div>
+    </div>
+    <div class="invoice-meta">
+      <div class="meta-row">
+        <span class="meta-label">Invoice&nbsp;#</span>
+        <span class="meta-value">{{ invoice.invoice_number }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Invoice&nbsp;Date</span>
+        <span class="meta-value">{{ invoice.invoice_date }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ITEMS TABLE -->
+  <table>
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th class="col-right">Hours</th>
+        <th class="col-right">Rate</th>
+        <th class="col-right">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in invoice.items.all %}
+      <tr>
+        <td style="white-space: pre-line;">{{ item.description }}</td>
+        <td class="col-right">{% if item.hours %}{{ item.hours }}{% else %}—{% endif %}</td>
+        <td class="col-right">{% if item.rate %}{{ invoice.currency }}{{ item.rate }}{% else %}—{% endif %}</td>
+        <td class="col-right">{{ item.amount }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td class="total-label" colspan="3">Total</td>
+        <td class="total-value">{{ invoice.currency }}{{ invoice.total }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  {% if invoice.terms %}
+  <div class="terms">
+    <div class="terms-label">Terms &amp; Conditions</div>
+    <div class="terms-text">{{ invoice.terms }}</div>
+  </div>
+  {% endif %}
+
+</body>
+</html>
