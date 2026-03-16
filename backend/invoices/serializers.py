@@ -75,7 +75,11 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     def get_sender_logo_url(self, obj):
         if obj.sender_logo:
-            return obj.sender_logo.url  # relative path, e.g. /media/logos/xxx.png
+            return obj.sender_logo.url
+        # Fall back to the sender profile logo
+        profile = SenderProfile.get()
+        if profile.logo:
+            return profile.logo.url
         return None
 
     def create(self, validated_data):

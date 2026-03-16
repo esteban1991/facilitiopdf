@@ -312,8 +312,8 @@ async function exportPdf() {
     a.download = `invoice-${invoice.value.invoice_number}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
-  } catch {
-    // Fallback: client-side PDF from preview
+  } catch (err) {
+    console.warn("Backend PDF failed, using client-side fallback:", err);
     await clientSidePdf();
   } finally {
     exporting.value = false;
@@ -324,16 +324,38 @@ async function clientSidePdf() {
   const { default: html2pdf } = await import("html2pdf.js");
   const el = document.querySelector(".invoice-preview-page");
   if (!el) return;
-  await html2pdf()
-    .set({
-      margin: 0,
-      filename: `invoice-${invoice.value.invoice_number}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    })
-    .from(el)
-    .save();
+
+  // Wrap clone in an off-screen container so overflow:hidden parent doesn't clip it
+  const offscreen = document.createElement("div");
+  offscreen.style.cssText =
+    "position:absolute;left:-9999px;top:0;width:794px;background:white;overflow:visible;";
+
+  const clone = el.cloneNode(true);
+  // Reset all inline positioning/scaling so html2canvas sees full content
+  clone.style.transform = "none";
+  clone.style.position = "static";
+  clone.style.top = "auto";
+  clone.style.left = "auto";
+  clone.style.width = "794px";
+  clone.style.minHeight = "1123px";
+
+  offscreen.appendChild(clone);
+  document.body.appendChild(offscreen);
+
+  try {
+    await html2pdf()
+      .set({
+        margin: 0,
+        filename: `invoice-${invoice.value.invoice_number}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: "px", format: [794, 1123], orientation: "portrait" },
+      })
+      .from(offscreen)
+      .save();
+  } finally {
+    document.body.removeChild(offscreen);
+  }
 }
 
 // ── Profile ────────────────────────────────────────────────
