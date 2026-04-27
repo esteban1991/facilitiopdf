@@ -13,6 +13,13 @@ export const profileApi = {
     }),
 };
 
+export const clientsApi = {
+  list: () => api.get("/clients/"),
+  create: (data) => api.post("/clients/", data),
+  update: (id, data) => api.put(`/clients/${id}/`, data),
+  delete: (id) => api.delete(`/clients/${id}/`),
+};
+
 export const invoicesApi = {
   list: () => api.get("/invoices/"),
   get: (id) => api.get(`/invoices/${id}/`),
@@ -20,6 +27,7 @@ export const invoicesApi = {
   update: (id, data) => api.put(`/invoices/${id}/`, data),
   delete: (id) => api.delete(`/invoices/${id}/`),
   nextNumber: () => api.get("/invoices/next_number/"),
+  duplicate: (id) => api.post(`/invoices/${id}/duplicate/`),
   uploadLogo: (id, file) => {
     const fd = new FormData();
     fd.append("logo", file);

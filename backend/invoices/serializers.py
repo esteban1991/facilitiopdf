@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import Invoice, LineItem, SenderProfile
+from .models import Client, Invoice, LineItem, SenderProfile
+
+
+class ClientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Client
+        fields = ["id", "name", "phone", "email", "address", "created_at"]
+        read_only_fields = ["created_at"]
 
 
 class LineItemSerializer(serializers.ModelSerializer):

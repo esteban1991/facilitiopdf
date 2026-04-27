@@ -8,8 +8,8 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Invoice, SenderProfile
-from .serializers import InvoiceListSerializer, InvoiceSerializer, SenderProfileSerializer
+from .models import Client, Invoice, LineItem, SenderProfile
+from .serializers import ClientSerializer, InvoiceListSerializer, InvoiceSerializer, SenderProfileSerializer
 
 
 # ── PDF helpers ───────────────────────────────────────────────────────────────
@@ -257,6 +257,11 @@ def _build_invoice_pdf(invoice):
 
 # ── Views ─────────────────────────────────────────────────────────────────────
 
+class ClientViewSet(viewsets.ModelViewSet):
+    queryset = Client.objects.all()
+    serializer_class = ClientSerializer
+
+
 class SenderProfileView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
@@ -292,6 +297,37 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         last = Invoice.objects.order_by("-invoice_number").first()
         next_num = (last.invoice_number + 1) if last else 1
         return Response({"next_number": next_num})
+
+    @action(detail=True, methods=["post"])
+    def duplicate(self, request, pk=None):
+        original = self.get_object()
+        last = Invoice.objects.order_by("-invoice_number").first()
+        next_num = (last.invoice_number + 1) if last else 1
+
+        new_invoice = Invoice.objects.create(
+            sender_name=original.sender_name,
+            sender_address=original.sender_address,
+            sender_logo=original.sender_logo,
+            client_name=original.client_name,
+            client_phone=original.client_phone,
+            client_email=original.client_email,
+            client_address=original.client_address,
+            invoice_number=next_num,
+            invoice_date=original.invoice_date,
+            currency=original.currency,
+            terms=original.terms,
+        )
+        for item in original.items.all():
+            LineItem.objects.create(
+                invoice=new_invoice,
+                description=item.description,
+                hours=item.hours,
+                rate=item.rate,
+                amount=item.amount,
+                order=item.order,
+            )
+        serializer = InvoiceSerializer(new_invoice, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], parser_classes=[MultiPartParser, FormParser])
     def upload_logo(self, request, pk=None):

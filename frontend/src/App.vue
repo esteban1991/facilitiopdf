@@ -45,8 +45,14 @@
         </button>
       </nav>
 
-      <!-- Settings link -->
-      <div class="p-3 border-t border-slate-700">
+      <!-- Bottom links -->
+      <div class="p-3 border-t border-slate-700 space-y-1">
+        <button
+          @click="showClients = true"
+          class="w-full text-slate-400 hover:text-white text-xs py-1.5 transition-colors text-left px-1"
+        >
+          👥 Clients
+        </button>
         <button
           @click="showSettings = true"
           class="w-full text-slate-400 hover:text-white text-xs py-1.5 transition-colors text-left px-1"
@@ -80,6 +86,13 @@
             Delete
           </button>
           <button
+            v-if="invoice.id"
+            @click="duplicateInvoice"
+            class="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded border border-gray-200 hover:border-gray-400 transition-colors"
+          >
+            Duplicate
+          </button>
+          <button
             @click="saveInvoice"
             :disabled="saving"
             class="bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors disabled:opacity-50"
@@ -100,7 +113,7 @@
       <div v-if="invoice" class="flex flex-1 min-h-0">
         <!-- Editor panel -->
         <div class="w-96 flex-shrink-0 overflow-y-auto bg-white border-r border-gray-200">
-          <InvoiceEditor v-model="invoice" @logo-uploaded="handleLogoUploaded" />
+          <InvoiceEditor v-model="invoice" :clients="clients" @logo-uploaded="handleLogoUploaded" />
         </div>
 
         <!-- Preview panel -->
@@ -131,6 +144,13 @@
         </div>
       </div>
     </div>
+
+    <!-- ── CLIENTS MODAL ── -->
+    <ClientManager
+      v-if="showClients"
+      @close="showClients = false"
+      @updated="fetchClients"
+    />
 
     <!-- ── SETTINGS MODAL ── -->
     <div
@@ -181,9 +201,10 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { invoicesApi, profileApi } from "./api/invoices.js";
+import { invoicesApi, profileApi, clientsApi } from "./api/invoices.js";
 import InvoiceEditor from "./components/InvoiceEditor.vue";
 import InvoicePreview from "./components/InvoicePreview.vue";
+import ClientManager from "./components/ClientManager.vue";
 
 // ── State ──────────────────────────────────────────────────
 const invoices = ref([]);
@@ -194,12 +215,19 @@ const saving = ref(false);
 const saveStatus = ref("");
 const exporting = ref(false);
 const showSettings = ref(false);
+const showClients = ref(false);
 const profile = ref({ name: "", address: "", default_currency: "$", default_terms: "", logo_url: "" });
+const clients = ref([]);
 
 // ── Init ───────────────────────────────────────────────────
 onMounted(async () => {
-  await Promise.all([fetchList(), fetchProfile()]);
+  await Promise.all([fetchList(), fetchProfile(), fetchClients()]);
 });
+
+async function fetchClients() {
+  const res = await clientsApi.list();
+  clients.value = res.data;
+}
 
 async function fetchList() {
   loadingList.value = true;
@@ -260,13 +288,38 @@ async function saveInvoice() {
     invoice.value = { ...invoice.value, ...res.data };
     currentId.value = res.data.id;
     saveStatus.value = "saved";
-    await fetchList();
+    await Promise.all([fetchList(), autoCreateClient()]);
     setTimeout(() => (saveStatus.value = ""), 2500);
   } catch {
     saveStatus.value = "error";
   } finally {
     saving.value = false;
   }
+}
+
+async function autoCreateClient() {
+  const name = invoice.value?.client_name?.trim();
+  if (!name) return;
+  const exists = clients.value.some(
+    (c) => c.name.toLowerCase() === name.toLowerCase()
+  );
+  if (!exists) {
+    await clientsApi.create({
+      name,
+      phone: invoice.value.client_phone || "",
+      email: invoice.value.client_email || "",
+      address: invoice.value.client_address || "",
+    });
+    await fetchClients();
+  }
+}
+
+async function duplicateInvoice() {
+  if (!invoice.value?.id) return;
+  const res = await invoicesApi.duplicate(invoice.value.id);
+  invoice.value = res.data;
+  currentId.value = res.data.id;
+  await fetchList();
 }
 
 async function deleteInvoice() {

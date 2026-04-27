@@ -39,9 +39,31 @@
     <section>
       <h3 class="section-title">Bill To</h3>
       <div class="space-y-3">
-        <div>
+        <div class="relative">
           <label class="field-label">Client Name</label>
-          <input v-model="inv.client_name" class="field-input" placeholder="ACME Corp" />
+          <input
+            v-model="inv.client_name"
+            class="field-input"
+            placeholder="ACME Corp"
+            autocomplete="off"
+            @input="onClientInput"
+            @focus="onClientInput"
+            @blur="closeDropdown"
+          />
+          <div
+            v-if="showDropdown && filteredClients.length"
+            class="absolute z-20 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto"
+          >
+            <button
+              v-for="c in filteredClients"
+              :key="c.id"
+              class="w-full text-left px-3 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors border-b border-gray-50 last:border-0"
+              @mousedown.prevent="pickClient(c)"
+            >
+              <div class="font-medium">{{ c.name }}</div>
+              <div class="text-xs text-gray-400">{{ c.email || c.phone || '' }}</div>
+            </button>
+          </div>
         </div>
         <div>
           <label class="field-label">Phone</label>
@@ -148,10 +170,36 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
-const props = defineProps({ modelValue: { type: Object, required: true } });
+const props = defineProps({
+  modelValue: { type: Object, required: true },
+  clients: { type: Array, default: () => [] },
+});
 const emit = defineEmits(["update:modelValue", "logo-uploaded"]);
+
+const showDropdown = ref(false);
+const filteredClients = ref([]);
+
+function onClientInput() {
+  const query = (inv.value.client_name || "").toLowerCase();
+  filteredClients.value = query
+    ? props.clients.filter((c) => c.name.toLowerCase().includes(query))
+    : props.clients;
+  showDropdown.value = true;
+}
+
+function closeDropdown() {
+  setTimeout(() => { showDropdown.value = false; }, 150);
+}
+
+function pickClient(c) {
+  inv.value.client_name = c.name;
+  inv.value.client_phone = c.phone || "";
+  inv.value.client_email = c.email || "";
+  inv.value.client_address = c.address || "";
+  showDropdown.value = false;
+}
 
 const inv = computed({
   get: () => props.modelValue,
