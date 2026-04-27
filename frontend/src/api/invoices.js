@@ -13,6 +13,10 @@ export const profileApi = {
     }),
 };
 
+export const statsApi = {
+  get: () => api.get("/stats/"),
+};
+
 export const clientsApi = {
   list: () => api.get("/clients/"),
   create: (data) => api.post("/clients/", data),

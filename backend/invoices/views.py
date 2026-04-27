@@ -1,9 +1,11 @@
 import os
 from io import BytesIO
 
+from django.db.models import F, Sum
+from django.db.models.functions import ExtractYear
 from django.http import HttpResponse
 from rest_framework import status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -253,6 +255,34 @@ def _build_invoice_pdf(invoice):
 
     doc.build(story)
     return buffer.getvalue()
+
+
+# ── Stats ─────────────────────────────────────────────────────────────────────
+
+@api_view(["GET"])
+def stats(request):
+    by_year = list(
+        LineItem.objects
+        .annotate(year=ExtractYear("invoice__invoice_date"))
+        .values("year")
+        .annotate(total=Sum("amount"))
+        .order_by("year")
+    )
+
+    by_client = list(
+        LineItem.objects
+        .values(client_name=F("invoice__client_name"))
+        .annotate(total=Sum("amount"))
+        .order_by("-total")
+    )
+
+    grand_total = LineItem.objects.aggregate(total=Sum("amount"))["total"] or 0
+
+    return Response({
+        "by_year": by_year,
+        "by_client": by_client,
+        "grand_total": grand_total,
+    })
 
 
 # ── Views ─────────────────────────────────────────────────────────────────────

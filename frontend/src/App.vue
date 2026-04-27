@@ -48,6 +48,12 @@
       <!-- Bottom links -->
       <div class="p-3 border-t border-slate-700 space-y-1">
         <button
+          @click="showStats = true"
+          class="w-full text-slate-400 hover:text-white text-xs py-1.5 transition-colors text-left px-1"
+        >
+          📊 Earnings
+        </button>
+        <button
           @click="showClients = true"
           class="w-full text-slate-400 hover:text-white text-xs py-1.5 transition-colors text-left px-1"
         >
@@ -145,6 +151,9 @@
       </div>
     </div>
 
+    <!-- ── STATS MODAL ── -->
+    <StatsPanel v-if="showStats" @close="showStats = false" />
+
     <!-- ── CLIENTS MODAL ── -->
     <ClientManager
       v-if="showClients"
@@ -205,6 +214,7 @@ import { invoicesApi, profileApi, clientsApi } from "./api/invoices.js";
 import InvoiceEditor from "./components/InvoiceEditor.vue";
 import InvoicePreview from "./components/InvoicePreview.vue";
 import ClientManager from "./components/ClientManager.vue";
+import StatsPanel from "./components/StatsPanel.vue";
 
 // ── State ──────────────────────────────────────────────────
 const invoices = ref([]);
@@ -216,6 +226,7 @@ const saveStatus = ref("");
 const exporting = ref(false);
 const showSettings = ref(false);
 const showClients = ref(false);
+const showStats = ref(false);
 const profile = ref({ name: "", address: "", default_currency: "$", default_terms: "", logo_url: "" });
 const clients = ref([]);
 
